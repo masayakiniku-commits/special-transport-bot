@@ -6,7 +6,7 @@ import time
 # ======================
 # 設定
 # ======================
-TOP_N = 5
+TOP_N = 3
 TARGET = ["てんびん座", "天秤座"]
 
 HEADERS = {
@@ -25,12 +25,10 @@ def send_line(msg):
     }
     data = {"message": msg}
 
-    for i in range(3):  # 3回リトライ
+    for i in range(3):
         try:
             res = requests.post(url, headers=headers, data=data, timeout=10)
-
             print(f"送信ステータス: {res.status_code}")
-
             if res.status_code == 200:
                 return
         except Exception as e:
