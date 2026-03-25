@@ -1,6 +1,7 @@
 import os
 import requests
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
 LINE_TOKEN = os.getenv("LINE_TOKEN")
 
@@ -22,22 +23,21 @@ def send_line(msg):
 
 
 # ======================
-# Yahoo占い取得
+# Yahoo占い取得（Playwright版）
 # ======================
 def yahoo():
-    url = "https://uranai.yahoo.co.jp/ranking"
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
 
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+        page.goto("https://fortune.yahoo.co.jp/", timeout=60000)
 
-    res = requests.get(url, headers=headers)
-    soup = BeautifulSoup(res.text, "html.parser")
+        html = page.content()
+        browser.close()
 
-    # 適当にテキスト抽出（まずは動作優先）
+    soup = BeautifulSoup(html, "html.parser")
     text = soup.get_text()
 
-    # 上位だけ抜粋（長すぎ防止）
     return text[:300]
 
 
@@ -45,15 +45,12 @@ def yahoo():
 # 実行
 # ======================
 def run():
-    msg = "🔮今日の占いランキング\n\n"
+    msg = "🔮今日の占い\n\n"
     msg += yahoo()
 
     send_line(msg)
 
 
-# ======================
-# スタート
-# ======================
 if __name__ == "__main__":
-    print("TOKEN:", LINE_TOKEN)  # デバッグ
+    print("TOKEN:", LINE_TOKEN)
     run()
