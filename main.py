@@ -1,89 +1,59 @@
 import os
-print("TOKEN:", os.getenv("LINE_TOKEN"))
 import requests
 from bs4 import BeautifulSoup
-import os
-from playwright.sync_api import sync_playwright
 
 LINE_TOKEN = os.getenv("LINE_TOKEN")
-SIGN = "てんびん座"
 
+# ======================
+# LINE送信
+# ======================
 def send_line(msg):
-    requests.post(
-        "https://notify-api.line.me/api/notify",
-        headers={"Authorization": f"Bearer {LINE_TOKEN}"},
-        data={"message": msg}
-    )
+    url = "https://api.line.me/v2/bot/message/push"
+    headers = {
+        "Authorization": f"Bearer {LINE_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "to": "U895287281171ab97865fafce69b8af76",
+        "messages": [{"type": "text", "text": msg}]
+    }
 
-# ----------------------
-# Yahoo占い
-# ----------------------
+    requests.post(url, headers=headers, json=data)
+
+
+# ======================
+# Yahoo占い取得
+# ======================
 def yahoo():
-    url = "https://fortune.yahoo.co.jp/12astro/ranking.html"
-    soup = BeautifulSoup(requests.get(url).text, "html.parser")
-    rows = soup.select(".rankingTable tr")
+    url = "https://uranai.yahoo.co.jp/ranking"
 
-    for r in rows[1:4]:
-        if SIGN in r.text:
-            return f"【Yahoo】\n{r.text.strip()}\n{url}"
-    return None
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
 
-# ----------------------
-# goo占い
-# ----------------------
-def goo():
-    url = "https://fortune.goo.ne.jp/ranking/"
-    soup = BeautifulSoup(requests.get(url).text, "html.parser")
-    items = soup.select(".ranking_list li")
+    res = requests.get(url, headers=headers)
+    soup = BeautifulSoup(res.text, "html.parser")
 
-    for i in range(3):
-        if SIGN in items[i].text:
-            return f"【goo】\n{items[i].text.strip()}\n{url}"
-    return None
+    # 適当にテキスト抽出（まずは動作優先）
+    text = soup.get_text()
 
-# ----------------------
-# LINE占い（Playwright）
-# ----------------------
-def line_fortune():
-    url = "https://fortune.line.me/horoscope"
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(url, timeout=60000)
+    # 上位だけ抜粋（長すぎ防止）
+    return text[:300]
 
-            page.wait_for_timeout(5000)  # 描画待ち
 
-            html = page.content()
-            browser.close()
-
-        soup = BeautifulSoup(html, "html.parser")
-
-        items = soup.select("li")  # 汎用（構造変化に強くするため）
-
-        for i in range(3):
-            text = items[i].text
-            if SIGN in text:
-                return f"【LINE占い】\n{text.strip()}\n{url}"
-
-    except Exception as e:
-        return None
-
-    return None
-
-# ----------------------
+# ======================
 # 実行
-# ----------------------
+# ======================
 def run():
-    msgs = []
+    msg = "🔮今日の占いランキング\n\n"
+    msg += yahoo()
 
-    for f in [yahoo, goo, line_fortune]:
-        res = f()
-        if res:
-            msgs.append(res)
+    send_line(msg)
 
-    if msgs:
-        send_line("\n\n".join(msgs))
 
+# ======================
+# スタート
+# ======================
 if __name__ == "__main__":
+    print("TOKEN:", LINE_TOKEN)  # デバッグ
     run()
