@@ -1,3 +1,5 @@
+import os
+print("TOKEN:", os.getenv("LINE_TOKEN"))
 import requests
 from bs4 import BeautifulSoup
 import os
