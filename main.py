@@ -4,10 +4,13 @@ import os
 import time
 
 # ======================
-# 設定
+# 自分の条件（ここ固定）
 # ======================
+MY_SIGNS = ["てんびん座", "天秤座"]
+MY_BLOOD = ["A型"]
+MY_ETO = ["巳"]   # 巳年
+
 TOP_N = 3
-TARGET = ["てんびん座", "天秤座"]
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0"
@@ -16,117 +19,75 @@ HEADERS = {
 LINE_TOKEN = os.getenv("LINE_TOKEN")
 
 # ======================
-# LINE送信（安定版）
+# LINE送信
 # ======================
 def send_line(msg):
     url = "https://notify-api.line.me/api/notify"
-    headers = {
-        "Authorization": f"Bearer {LINE_TOKEN}"
-    }
+    headers = {"Authorization": f"Bearer {LINE_TOKEN}"}
     data = {"message": msg}
 
-    for i in range(3):
+    for _ in range(3):
         try:
             res = requests.post(url, headers=headers, data=data, timeout=10)
-            print(f"送信ステータス: {res.status_code}")
-            if res.status_code == 200:
-                return
-        except Exception as e:
-            print(f"送信エラー: {e}")
+            print("送信:", res.status_code)
+            return
+        except:
             time.sleep(2)
 
 # ======================
-# LINE占い
+# Gooランキング共通取得
 # ======================
-def line_fortune():
+def get_ranking(url, selector):
     try:
-        url = "https://fortune.line.me/horoscope"
         r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
 
         results = []
-        items = soup.select("li")
-
-        rank = 0
-        for item in items:
-            text = item.get_text()
-
-            if "座" in text:
-                rank += 1
-                if rank <= TOP_N:
-                    results.append((rank, text))
-
-        return results
-
-    except Exception as e:
-        print(f"LINE占いエラー: {e}")
-        return []
-
-# ======================
-# Goo占い
-# ======================
-def goo_fortune():
-    try:
-        url = "https://fortune.goo.ne.jp/ranking/"
-        r = requests.get(url, headers=HEADERS, timeout=10)
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        results = []
-        items = soup.select(".ranking_list li")[:TOP_N]
+        items = soup.select(selector)[:TOP_N]
 
         for i, item in enumerate(items, start=1):
             text = item.get_text(strip=True)
             results.append((i, text))
 
         return results
-
     except Exception as e:
-        print(f"Goo占いエラー: {e}")
+        print("取得エラー:", e)
         return []
 
 # ======================
-# 楽天占い
+# 各占い
 # ======================
-def rakuten_fortune():
-    try:
-        url = "https://fortune.rakuten.co.jp/"
-        r = requests.get(url, headers=HEADERS, timeout=10)
-        soup = BeautifulSoup(r.text, "html.parser")
+def zodiac():
+    return get_ranking(
+        "https://fortune.goo.ne.jp/ranking/",
+        ".ranking_list li"
+    )
 
-        results = []
-        items = soup.select("li")
+def blood():
+    return get_ranking(
+        "https://fortune.goo.ne.jp/blood/",
+        "li"
+    )
 
-        rank = 0
-        for item in items:
-            text = item.get_text()
-
-            if "座" in text and "位" in text:
-                rank += 1
-                if rank <= TOP_N:
-                    results.append((rank, text))
-
-        return results
-
-    except Exception as e:
-        print(f"楽天占いエラー: {e}")
-        return []
+def eto():
+    return get_ranking(
+        "https://fortune.goo.ne.jp/",
+        "li"
+    )
 
 # ======================
-# 判定ロジック
+# 判定
 # ======================
-def check_target(results, site_name):
-    if not results:
-        return ""
-
-    msg = f"\n🔮{site_name}\n"
+def check(results, targets, title):
+    msg = ""
     hit = False
 
     for rank, text in results:
-        msg += f"{rank}位：{text}\n"
-        if any(t in text for t in TARGET):
+        if any(t in text for t in targets):
+            msg += f"{title} {rank}位：{text}\n"
             hit = True
 
-    return msg if hit else ""
+    return msg, hit
 
 # ======================
 # 実行
@@ -134,28 +95,35 @@ def check_target(results, site_name):
 def run():
     print("処理開始")
 
-    msg = f"🔮今日の占い（TOP{TOP_N}）\n"
+    msg = "🔮今日のラッキー通知\n"
+    hit_total = False
 
-    line = line_fortune()
-    goo = goo_fortune()
-    rakuten = rakuten_fortune()
+    # 星座
+    z = zodiac()
+    print("星座:", z)
+    m, h = check(z, MY_SIGNS, "星座")
+    msg += m
+    hit_total |= h
 
-    print("LINE取得:", line)
-    print("Goo取得:", goo)
-    print("楽天取得:", rakuten)
+    # 血液型
+    b = blood()
+    print("血液型:", b)
+    m, h = check(b, MY_BLOOD, "血液型")
+    msg += m
+    hit_total |= h
 
-    msg += check_target(line, "LINE占い")
-    msg += check_target(goo, "Goo占い")
-    msg += check_target(rakuten, "楽天占い")
+    # 干支
+    e = eto()
+    print("干支:", e)
+    m, h = check(e, MY_ETO, "干支")
+    msg += m
+    hit_total |= h
 
-    if msg.strip() == f"🔮今日の占い（TOP{TOP_N}）":
-        msg = f"てんびん座TOP{TOP_N}入りなし"
+    # 通知判定
+    if hit_total:
+        print("送信内容:\n", msg)
+        send_line(msg)
+    else:
+        print("該当なし（通知なし）")
 
-    print("送信内容:\n", msg)
-
-    send_line(msg)
-
-# ======================
-# 実行
-# ======================
 run()
