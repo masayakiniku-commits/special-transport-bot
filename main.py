@@ -1,62 +1,91 @@
-import os
 import requests
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright
 
-LINE_TOKEN = os.getenv("LINE_TOKEN")
+TARGET = ["てんびん座", "天秤座"]
 
-def send_line(msg):
-    url = "https://api.line.me/v2/bot/message/push"
-    headers = {
-        "Authorization": f"Bearer {LINE_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "to": "U895287281171ab97865fafce69b8af76",
-        "messages": [{"type": "text", "text": msg}]
-    }
-    requests.post(url, headers=headers, json=data)
+# ----------------------
+# LINE占い
+# ----------------------
+def line_fortune():
+    url = "https://fortune.line.me/horoscope"
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, "html.parser")
 
+    results = []
+    items = soup.select(".mdCMN01List li")[:3]
 
-def get_fortune():
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
-        page.goto("https://fortune.line.me/horoscope", timeout=60000)
+    for i, item in enumerate(items, start=1):
+        text = item.get_text()
+        results.append((i, text))
 
-        html = page.content()
-        browser.close()
+    return results
 
-    soup = BeautifulSoup(html, "html.parser")
+# ----------------------
+# Goo占い
+# ----------------------
+def goo_fortune():
+    url = "https://fortune.goo.ne.jp/ranking/"
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, "html.parser")
 
-    # ★ランキングっぽい部分を取得
-    items = soup.select("li")  # とりあえずli全部
+    results = []
+    items = soup.select(".ranking_list li")[:3]
 
-    result = "🔮今日の星座ランキング TOP3\n\n"
+    for i, item in enumerate(items, start=1):
+        text = item.get_text()
+        results.append((i, text))
 
-    count = 0
+    return results
+
+# ----------------------
+# 楽天占い
+# ----------------------
+def rakuten_fortune():
+    url = "https://fortune.rakuten.co.jp/"
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    results = []
+    items = soup.select("li")[:10]  # 仮で広く取る
+
+    rank = 0
     for item in items:
-        text = item.get_text(strip=True)
+        text = item.get_text()
 
-        # 星座っぽいキーワードでフィルタ
-        if "座" in text and len(text) < 20:
-            result += f"{count+1}位：{text}\n"
-            count += 1
+        if "位" in text:
+            rank += 1
+            if rank <= 3:
+                results.append((rank, text))
 
-        if count == 3:
-            break
+    return results
 
-    if count == 0:
-        return "占い取得失敗（サイト構造変化）"
+# ----------------------
+# 判定ロジック
+# ----------------------
+def check_target(results, site_name):
+    msg = f"\n🔮{site_name}\n"
+    hit = False
 
-    return result
+    for rank, text in results:
+        msg += f"{rank}位：{text}\n"
+        if any(t in text for t in TARGET):
+            hit = True
 
+    return msg if hit else ""
 
+# ----------------------
+# 実行
+# ----------------------
 def run():
-    msg = get_fortune()
-    send_line(msg)
+    msg = "🔮今日の占い（TOP3）\n"
 
+    msg += check_target(line_fortune(), "LINE占い")
+    msg += check_target(goo_fortune(), "Goo占い")
+    msg += check_target(rakuten_fortune(), "楽天占い")
 
-if __name__ == "__main__":
-    print("TOKEN:", LINE_TOKEN)
-    run()
+    if msg.strip() == "🔮今日の占い（TOP3）":
+        msg = "てんびん座TOP3入りなし"
+
+    print(msg)
+
+run()
