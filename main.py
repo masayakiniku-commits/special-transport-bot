@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import os
+import time
 
 # ======================
 # 設定
@@ -15,14 +16,26 @@ HEADERS = {
 LINE_TOKEN = os.getenv("LINE_TOKEN")
 
 # ======================
-# LINE送信
+# LINE送信（安定版）
 # ======================
 def send_line(msg):
-    requests.post(
-        "https://notify-api.line.me/api/notify",
-        headers={"Authorization": f"Bearer {LINE_TOKEN}"},
-        data={"message": msg}
-    )
+    url = "https://notify-api.line.me/api/notify"
+    headers = {
+        "Authorization": f"Bearer {LINE_TOKEN}"
+    }
+    data = {"message": msg}
+
+    for i in range(3):  # 3回リトライ
+        try:
+            res = requests.post(url, headers=headers, data=data, timeout=10)
+
+            print(f"送信ステータス: {res.status_code}")
+
+            if res.status_code == 200:
+                return
+        except Exception as e:
+            print(f"送信エラー: {e}")
+            time.sleep(2)
 
 # ======================
 # LINE占い
@@ -30,7 +43,7 @@ def send_line(msg):
 def line_fortune():
     try:
         url = "https://fortune.line.me/horoscope"
-        r = requests.get(url, headers=HEADERS)
+        r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
 
         results = []
@@ -47,7 +60,8 @@ def line_fortune():
 
         return results
 
-    except:
+    except Exception as e:
+        print(f"LINE占いエラー: {e}")
         return []
 
 # ======================
@@ -56,7 +70,7 @@ def line_fortune():
 def goo_fortune():
     try:
         url = "https://fortune.goo.ne.jp/ranking/"
-        r = requests.get(url, headers=HEADERS)
+        r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
 
         results = []
@@ -68,7 +82,8 @@ def goo_fortune():
 
         return results
 
-    except:
+    except Exception as e:
+        print(f"Goo占いエラー: {e}")
         return []
 
 # ======================
@@ -77,7 +92,7 @@ def goo_fortune():
 def rakuten_fortune():
     try:
         url = "https://fortune.rakuten.co.jp/"
-        r = requests.get(url, headers=HEADERS)
+        r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
 
         results = []
@@ -94,7 +109,8 @@ def rakuten_fortune():
 
         return results
 
-    except:
+    except Exception as e:
+        print(f"楽天占いエラー: {e}")
         return []
 
 # ======================
@@ -118,14 +134,26 @@ def check_target(results, site_name):
 # 実行
 # ======================
 def run():
+    print("処理開始")
+
     msg = f"🔮今日の占い（TOP{TOP_N}）\n"
 
-    msg += check_target(line_fortune(), "LINE占い")
-    msg += check_target(goo_fortune(), "Goo占い")
-    msg += check_target(rakuten_fortune(), "楽天占い")
+    line = line_fortune()
+    goo = goo_fortune()
+    rakuten = rakuten_fortune()
+
+    print("LINE取得:", line)
+    print("Goo取得:", goo)
+    print("楽天取得:", rakuten)
+
+    msg += check_target(line, "LINE占い")
+    msg += check_target(goo, "Goo占い")
+    msg += check_target(rakuten, "楽天占い")
 
     if msg.strip() == f"🔮今日の占い（TOP{TOP_N}）":
         msg = f"てんびん座TOP{TOP_N}入りなし"
+
+    print("送信内容:\n", msg)
 
     send_line(msg)
 
