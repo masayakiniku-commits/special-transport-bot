@@ -1,32 +1,54 @@
-import os
 import requests
 
-LINE_TOKEN = os.getenv("LINE_TOKEN")
-LINE_API = "https://notify-api.line.me/api/notify"
+# ----------------------------
+# 設定
+# ----------------------------
+LINE_TOKEN = "YOUR_LINE_TOKEN"  # GitHub Secrets に入れると安全
+SIGN = "libra"  # てんびん座の場合
+LINE_HEADERS = {"Authorization": f"Bearer {LINE_TOKEN}"}
 
-def send_line(message):
-    if not LINE_TOKEN:
-        print("⚠️ LINE_TOKEN 未設定")
-        return
-    headers = {"Authorization": f"Bearer {LINE_TOKEN}"}
-    payload = {"message": message}
+# ----------------------------
+# Vedika占い取得
+# ----------------------------
+def get_vedika(sign=SIGN):
+    url = f"https://api.vedika.io/horoscope/today/{sign}"
     try:
-        res = requests.post(LINE_API, headers=headers, data=payload)
-        print(f"LINE通知ステータス: {res.status_code}")
+        res = requests.get(url, timeout=10).json()
+        # サンプル: res['description'] に今日の運勢が入っている想定
+        return res.get("description", "Vedika占い情報なし")
+    except Exception as e:
+        return f"Vedika取得失敗: {e}"
+
+# ----------------------------
+# AstroJson占い取得
+# ----------------------------
+def get_astrojson(sign=SIGN):
+    url = f"https://api.astrojson.io/horoscope/daily/{sign}"
+    try:
+        res = requests.get(url, timeout=10).json()
+        # サンプル: res['today']['summary'] に今日の運勢が入っている想定
+        return res.get("today", {}).get("summary", "AstroJson占い情報なし")
+    except Exception as e:
+        return f"AstroJson取得失敗: {e}"
+
+# ----------------------------
+# LINE通知
+# ----------------------------
+def send_line(message):
+    try:
+        requests.post("https://notify-api.line.me/api/notify", headers=LINE_HEADERS, data={"message": message})
     except Exception as e:
         print(f"LINE通知失敗: {e}")
 
-# テスト用順位
-rank_yahoo = 3
-rank_nifty = 5
-rank_au = 2
-
-message = (
-    f"★テスト占い順位★\n"
-    f"Yahoo占い: {rank_yahoo}\n"
-    f"Nifty占い: {rank_nifty}\n"
-    f"AU占い: {rank_au}"
-)
-
-print(message)
-send_line(message)
+# ----------------------------
+# メイン処理
+# ----------------------------
+if __name__ == "__main__":
+    messages = [
+        f"🔮今日のVedika占い ({SIGN})\n{get_vedika()}",
+        f"🔮今日のAstroJson占い ({SIGN})\n{get_astrojson()}"
+    ]
+    
+    for msg in messages:
+        print(msg)  # ログ用
+        send_line(msg)
