@@ -1,29 +1,32 @@
-# main.py
+import os
+import requests
 
-# -------------------------------
-# テスト用：外部アクセス不要版
-# -------------------------------
+LINE_TOKEN = os.getenv("LINE_TOKEN")
+LINE_API = "https://notify-api.line.me/api/notify"
 
-def get_yahoo():
-    # 本来はスクレイピングするところですが、
-    # Actions で DNS エラーになるので仮の順位を返す
-    return 3  # 仮の順位（例）
+def send_line(message):
+    if not LINE_TOKEN:
+        print("⚠️ LINE_TOKEN 未設定")
+        return
+    headers = {"Authorization": f"Bearer {LINE_TOKEN}"}
+    payload = {"message": message}
+    try:
+        res = requests.post(LINE_API, headers=headers, data=payload)
+        print(f"LINE通知ステータス: {res.status_code}")
+    except Exception as e:
+        print(f"LINE通知失敗: {e}")
 
-def get_nifty():
-    return 5  # 仮の順位（例）
+# テスト用順位
+rank_yahoo = 3
+rank_nifty = 5
+rank_au = 2
 
-def get_au():
-    return 2  # 仮の順位（例）
+message = (
+    f"★テスト占い順位★\n"
+    f"Yahoo占い: {rank_yahoo}\n"
+    f"Nifty占い: {rank_nifty}\n"
+    f"AU占い: {rank_au}"
+)
 
-if __name__ == "__main__":
-    print("★実行スタート")
-    
-    rank_yahoo = get_yahoo()
-    rank_nifty = get_nifty()
-    rank_au = get_au()
-    
-    print(f"Yahoo占い順位: {rank_yahoo}")
-    print(f"Nifty占い順位: {rank_nifty}")
-    print(f"AU占い順位: {rank_au}")
-    
-    print("★処理完了（テスト用）")
+print(message)
+send_line(message)
