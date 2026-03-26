@@ -1,21 +1,27 @@
 name: Fortune Bot
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 22 * * *'   # 日本時間 朝7時（UTC22時）
+  workflow_dispatch:        # 手動実行ボタン
 
 jobs:
   run:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: コード取得
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Pythonセットアップ
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: ライブラリインストール
-        run: pip install requests
+        run: pip install requests beautifulsoup4
 
       - name: 実行
+        env:
+          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
         run: python main.py
