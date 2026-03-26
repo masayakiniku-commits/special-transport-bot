@@ -8,12 +8,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: チェックアウト
+        uses: actions/checkout@v4
 
       - name: Pythonセットアップ
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: 実行
+      - name: ファイル確認（超重要）
+        run: ls -la
+
+      - name: Python実行（強制）
         run: python main.py
