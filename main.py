@@ -8,30 +8,31 @@ def get_best_libra():
     res = requests.get(url)
     soup = BeautifulSoup(res.text, "html.parser")
 
+    text = soup.get_text()
+
     best_rank = 99
     best_site = ""
     best_link = ""
 
-    for h in soup.find_all("h3"):
-        text = h.get_text()
-        if "位" in text:
-            try:
-                rank = int(text.split("位")[0])
-                site = text.split("位")[1].strip()
+    sites = {
+        "占いnifty": "https://uranai.nifty.com/",
+        "dmenu占い": "https://fortune.dmkt-sp.jp/",
+        "Yahoo占い": "https://fortune.yahoo.co.jp/12astro/"
+    }
 
-                link_map = {
-                    "占いnifty": "https://uranai.nifty.com/",
-                    "dmenu占い": "https://fortune.dmkt-sp.jp/",
-                    "Yahoo占い": "https://fortune.yahoo.co.jp/12astro/"
-                }
+    for site in sites:
+        if site in text:
+            # 「○位」を探す
+            import re
+            match = re.search(r"(\d+)位.*" + site, text)
 
-                if site in link_map and rank < best_rank:
+            if match:
+                rank = int(match.group(1))
+
+                if rank < best_rank:
                     best_rank = rank
                     best_site = site
-                    best_link = link_map[site]
-
-            except:
-                continue
+                    best_link = sites[site]
 
     print("★取得結果:", best_rank, best_site)
 
