@@ -1,66 +1,51 @@
 import requests
 from bs4 import BeautifulSoup
 
+print("★実行スタート")
+
+# ===== ニフティ =====
 def get_nifty():
-    url = "https://uranai.nifty.com/12seiza/"
+    url = "https://fortune.nifty.com/12star/libra/"
     res = requests.get(url)
     soup = BeautifulSoup(res.text, "html.parser")
 
-    for li in soup.select("li"):
-        text = li.get_text()
-        if "てんびん座" in text:
-            return int(text.split("位")[0])
+    rank = soup.select_one(".rank")
+    if rank:
+        return int(rank.text.replace("位", "").strip())
     return 99
 
 
-def get_dmenu():
-    url = "https://fortune.dmkt-sp.jp/"
-    res = requests.get(url)
-    soup = BeautifulSoup(res.text, "html.parser")
-
-    for li in soup.select("li"):
-        text = li.get_text()
-        if "てんびん座" in text:
-            return int(text.split("位")[0])
-    return 99
-
-
+# ===== Yahoo =====
 def get_yahoo():
-    url = "https://fortune.yahoo.co.jp/12astro/"
+    url = "https://fortune.yahoo.co.jp/12astro/libra"
     res = requests.get(url)
     soup = BeautifulSoup(res.text, "html.parser")
 
-    for li in soup.select("li"):
-        text = li.get_text()
-        if "てんびん座" in text:
-            return int(text.split("位")[0])
+    rank = soup.select_one(".rank")
+    if rank:
+        return int(rank.text.replace("位", "").strip())
     return 99
 
 
-if __name__ == "__main__":
-    print("★実行スタート")
+print("★スクレイピング開始")
 
-    results = {
-        "占いnifty": (get_nifty(), "https://uranai.nifty.com/"),
-        "dmenu占い": (get_dmenu(), "https://fortune.dmkt-sp.jp/"),
-        "Yahoo占い": (get_yahoo(), "https://fortune.yahoo.co.jp/12astro/")
-    }
+results = {
+    "nifty占い": (get_nifty(), "https://fortune.nifty.com/12star/libra/"),
+    "Yahoo占い": (get_yahoo(), "https://fortune.yahoo.co.jp/12astro/libra"),
+}
 
-    best_site = ""
-    best_rank = 99
-    best_link = ""
+print("★取得結果:", results)
 
-    for site, (rank, link) in results.items():
-        print(site, rank)
+# ===== 一番良い順位を選ぶ =====
+best = min(results.items(), key=lambda x: x[1][0])
 
-        if rank < best_rank:
-            best_rank = rank
-            best_site = site
-            best_link = link
+name = best[0]
+rank = best[1][0]
+url = best[1][1]
 
-    if best_site:
-        print("\n🔮てんびん座 今日の最強占い")
-        print(f"{best_site}：{best_rank}位")
-        print(best_link)
-    else:
-        print("⚠️取得失敗")
+if rank <= 3:
+    message = f"今日のてんびん座は{rank}位！\n{name}\n{url}"
+else:
+    message = f"今日は見送り（最高{rank}位）"
+
+print(message)
