@@ -25,15 +25,19 @@ def run():
 
     tweets = []
     for kw in KEYWORDS:
-        res = client.search_recent_tweets(query=f'"{kw}" -is:retweet', start_time=start, max_results=50)
+        res = client.search_recent_tweets(
+            query=f'"{kw}" -is:retweet',
+            start_time=start,
+            max_results=50
+        )
         if res.data:
             for t in res.data:
                 if is_target(t.text):
                     tweets.append(t.text)
 
     if len(tweets) >= 2:
-        msg = f"⚠️ 特殊輸送検知 {len(tweets)}件\n"
-        msg += "\n".join(tweets[:3])
+        msg = f"⚠️ 特殊輸送検知 {len(tweets)}件\n\n"
+        msg += "\n\n".join(tweets[:3])
         send_line(msg)
 
 if __name__ == "__main__":
