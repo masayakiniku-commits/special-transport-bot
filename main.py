@@ -1,33 +1,15 @@
 import os
 import requests
 
-# =========================
-
-# ■ 環境変数
-
-# =========================
-
 BEARER_TOKEN = os.getenv("X_BEARER_TOKEN")
 LINE_TOKEN = os.getenv("LINE_TOKEN")
-
-# =========================
-
-# ■ LINE送信
-
-# =========================
 
 def send_line(msg):
 requests.post(
 "https://notify-api.line.me/api/notify",
-headers={"Authorization": f"Bearer {LINE_TOKEN}"},
+headers={"Authorization": "Bearer " + LINE_TOKEN},
 data={"message": msg}
 )
-
-# =========================
-
-# ■ Xから取得
-
-# =========================
 
 def get_koshu_tweets():
 url = "https://api.twitter.com/2/tweets/search/recent"
@@ -39,7 +21,7 @@ params = {
 }
 
 headers = {
-    "Authorization": f"Bearer {BEARER_TOKEN}"
+    "Authorization": "Bearer " + BEARER_TOKEN
 }
 
 res = requests.get(url, headers=headers, params=params)
@@ -47,12 +29,6 @@ data = res.json()
 
 return data.get("data", [])
 ```
-
-# =========================
-
-# ■ 実行
-
-# =========================
 
 def main():
 tweets = get_koshu_tweets()
