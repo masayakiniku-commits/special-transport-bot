@@ -1,7 +1,3 @@
-import os
-
 def main():
-    print("OK")
-
-if __name__ == "__main__":
-    main()
+    send_line("テスト通知")
+    print("テスト送信")
