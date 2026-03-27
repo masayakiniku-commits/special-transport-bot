@@ -2,26 +2,24 @@ name: 特殊輸送BOT
 
 on:
   schedule:
-    - cron: '0 22 * * *'   # 日本時間 朝7時（UTC22時）
-  workflow_dispatch:        # 手動実行ボタン
+    - cron: '*/15 * * * *'  # 15分ごと
+  workflow_dispatch:
 
 jobs:
   run:
     runs-on: ubuntu-latest
 
     steps:
-      - name: コード取得
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Pythonセットアップ
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: ライブラリインストール
-        run: pip install requests beautifulsoup4
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      - name: 実行
-        env:
-          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
+      - name: Run script
         run: python main.py
