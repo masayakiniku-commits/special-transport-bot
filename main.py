@@ -1,44 +1,75 @@
 import os
 import requests
-from datetime import datetime, timedelta
-import tweepy
 
+# =========================
+
+# ■ 環境変数（GitHub Secrets）
+
+# =========================
+
+BEARER_TOKEN = os.getenv("X_BEARER_TOKEN")
 LINE_TOKEN = os.getenv("LINE_TOKEN")
-BEARER_TOKEN = os.getenv("TWITTER_BEARER")
 
-KEYWORDS = ['甲種輸送', 'シキ1000', 'シキ800', '特殊貨物']
-TARGET = ["愛知", "名古屋", "岡崎", "豊橋", "岐阜", "一宮", "浜松"]
+# =========================
+
+# ■ LINE送信
+
+# =========================
 
 def send_line(msg):
-    requests.post(
-        "https://notify-api.line.me/api/notify",
-        headers={"Authorization": f"Bearer {LINE_TOKEN}"},
-        data={"message": msg}
-    )
+requests.post(
+"https://notify-api.line.me/api/notify",
+headers={"Authorization": f"Bearer {LINE_TOKEN}"},
+data={"message": msg}
+)
 
-def is_target(text):
-    return any(k in text for k in TARGET)
+# =========================
 
-def run():
-    client = tweepy.Client(bearer_token=BEARER_TOKEN)
-    start = (datetime.utcnow() - timedelta(minutes=30)).isoformat("T")+"Z"
+# ■ Xから甲種輸送取得
 
-    tweets = []
-    for kw in KEYWORDS:
-        res = client.search_recent_tweets(
-            query=f'"{kw}" -is:retweet',
-            start_time=start,
-            max_results=50
-        )
-        if res.data:
-            for t in res.data:
-                if is_target(t.text):
-                    tweets.append(t.text)
+# =========================
 
-    if len(tweets) >= 2:
-        msg = f"⚠️ 特殊輸送検知 {len(tweets)}件\n\n"
-        msg += "\n\n".join(tweets[:3])
+def get_koshu_tweets():
+url = "https://api.twitter.com/2/tweets/search/recent"
+
+```
+params = {
+    "query": "(甲種輸送 OR 配給輸送) (EF210 OR EF65 OR DE10 OR DD200) -is:retweet",
+    "max_results": 10
+}
+
+headers = {
+    "Authorization": f"Bearer {BEARER_TOKEN}"
+}
+
+res = requests.get(url, headers=headers, params=params)
+data = res.json()
+
+return data.get("data", [])
+```
+
+# =========================
+
+# ■ 実行
+
+# =========================
+
+def main():
+tweets = get_koshu_tweets()
+
+```
+if not tweets:
+    print("取得なし")
+    return
+
+for t in tweets:
+    text = t["text"]
+
+    if "甲種輸送" in text:
+        msg = "🚃甲種輸送検知\n\n" + text
         send_line(msg)
+        print("送信:", text)
+```
 
-if __name__ == "__main__":
-    run()
+if **name** == "**main**":
+main()
