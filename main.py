@@ -25,7 +25,6 @@ def fetch_posts(query):
     for item in soup.select("li"):
         text = item.get_text()
         if "twitter.com" in text or "X" in text:
-            # URLを抽出する簡易版
             links = item.select("a[href]")
             for link in links:
                 href = link.get("href")
@@ -64,9 +63,7 @@ def main():
 
             old_posts = old_data.get(query, [])
             if len(posts) >= THRESHOLD and len(posts) > len(old_posts):
-                # 件数順に整列
                 alerts.append(f"{query} 投稿数: {len(posts)}件 (前回 {len(old_posts)}件)")
-                # URLリンクの上位10件を通知
                 top_links = "\n".join(posts[:10])
                 alerts.append(top_links)
 
