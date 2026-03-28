@@ -6,7 +6,7 @@ import os
 # -----------------------------
 # 設定
 # -----------------------------
-LINE_TOKEN = "pT3tMy7Wkdtxrzt/0Ok0tACP+qA8kiRjD5+bgWyekS5tAVdwqY0gHnWR49EETDVHLF5rKdfijeaxxfVbkInVdW6b8O+HAziOd/j6P/YCKj/IRqbCWMfxDJrE2Ja8BRk9FmgJcU55jHD2BEx1uVA3XwdB04t89/1O/w1cDnyilFU="
+LINE_TOKEN = os.environ.get("LINE_TOKEN")  # GitHub Secretsから取得
 
 KEYWORDS = ["甲種輸送", "特殊貨物"]
 LOCATIONS = ["岐阜","一宮","名古屋","刈谷","安城","岡崎","豊川","豊橋","浜松"]
@@ -18,7 +18,7 @@ DATA_FILE = "data.json"
 # LINE送信関数
 # -----------------------------
 def send_line(msg):
-    headers = {"Authorization": f"Bearer {LINE_TOKEN}"}
+    headers = {"Authorization": f"Bearer {pT3tMy7Wkdtxrzt/0Ok0tACP+qA8kiRjD5+bgWyekS5tAVdwqY0gHnWR49EETDVHLF5rKdfijeaxxfVbkInVdW6b8O+HAziOd/j6P/YCKj/IRqbCWMfxDJrE2Ja8BRk9FmgJcU55jHD2BEx1uVA3XwdB04t89/1O/w1cDnyilFU=}"}
     data = {"message": msg}
     try:
         r = requests.post("https://notify-api.line.me/api/notify", headers=headers, data=data)
