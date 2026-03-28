@@ -1,8 +1,7 @@
 import os
 import requests
-from time import sleep
 
-# 環境変数からトークン取得
+# 環境変数から取得
 BEARER_TOKEN = os.getenv("X_BEARER_TOKEN")
 LINE_TOKEN = os.getenv("LINE_TOKEN")
 
@@ -19,7 +18,7 @@ def send_line(msg):
     except Exception as e:
         print("LINE送信失敗:", e)
 
-# X取得関数
+# 甲種輸送ツイート取得関数
 def get_koshu_tweets():
     url = "https://api.twitter.com/2/tweets/search/recent"
     params = {"query": "甲種輸送 -is:retweet", "max_results": 10}
@@ -33,16 +32,16 @@ def get_koshu_tweets():
         print("X取得失敗:", e)
         return []
 
-# メインループ（1時間ごとに通知）
+# メイン処理
 def main():
-    while True:
-        tweets = get_koshu_tweets()
-        if not tweets:
-            print("ツイート取得なし")
-        for t in tweets:
-            msg = "🚃甲種輸送検知\n\n" + t["text"]
-            send_line(msg)
-        sleep(3600)  # 1時間待機
+    tweets = get_koshu_tweets()
+    if not tweets:
+        send_line("ℹ️ 有効な甲種輸送投稿はありません")
+        print("ツイート取得なし")
+        return
+    for t in tweets:
+        msg = "🚃甲種輸送検知\n\n" + t["text"]
+        send_line(msg)
 
 if __name__ == "__main__":
     main()
