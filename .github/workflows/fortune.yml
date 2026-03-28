@@ -1,9 +1,9 @@
-name: koshu-check
+name: koushu-alert
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'  # 30分ごと
+    - cron: "0 * * * *"  # 毎時0分
+  workflow_dispatch:
 
 jobs:
   run:
@@ -16,9 +16,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install requests
+      - run: pip install requests beautifulsoup4
 
-      - run: python main.py
+      - run: python koushu_alert.py
         env:
-          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
