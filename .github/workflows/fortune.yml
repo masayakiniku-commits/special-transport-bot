@@ -2,8 +2,8 @@ name: koushu-alert
 
 on:
   schedule:
-    - cron: "0 * * * *"  # 毎時0分
-  workflow_dispatch:
+    - cron: "0 * * * *"  # 毎時0分に実行
+  workflow_dispatch:       # 手動実行も可能
 
 jobs:
   run:
@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install requests beautifulsoup4
+      - run: pip install -r requirements.txt
 
       - run: python koushu_alert.py
         env:
