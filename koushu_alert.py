@@ -1,79 +1,40 @@
+import os
 import requests
 from bs4 import BeautifulSoup
-import json
-import os
 
-# -----------------------------
-# 設定
-# -----------------------------
-LINE_TOKEN = os.environ.get("LINE_TOKEN")  # GitHub Secretsから取得
+DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK")
 
-KEYWORDS = ["甲種輸送", "特殊貨物"]
-LOCATIONS = ["岐阜","一宮","名古屋","刈谷","安城","岡崎","豊川","豊橋","浜松"]
-THRESHOLD = 10
+# 検索キーワード
+keywords = ["甲種輸送", "特殊貨物"]
+locations = ["岐阜", "一宮", "名古屋", "刈谷", "安城", "岡崎", "豊川", "豊橋", "浜松"]
 
-DATA_FILE = "data.json"
+def get_yahoo_posts():
+    # Yahoo検索URL作成（例）
+    query = "+".join(keywords + locations)
+    url = f"https://search.yahoo.co.jp/search?p={query}"
+    
+    res = requests.get(url)
+    soup = BeautifulSoup(res.text, "html.parser")
+    
+    # 投稿件数をざっくりカウント
+    posts = soup.find_all("li")  # 適宜調整
+    count = len(posts)
+    return count
 
-# -----------------------------
-# LINE送信関数
-# -----------------------------
-def send_line(msg):
-    headers = {"Authorization": f"Bearer {pT3tMy7Wkdtxrzt/0Ok0tACP+qA8kiRjD5+bgWyekS5tAVdwqY0gHnWR49EETDVHLF5rKdfijeaxxfVbkInVdW6b8O+HAziOd/j6P/YCKj/IRqbCWMfxDJrE2Ja8BRk9FmgJcU55jHD2BEx1uVA3XwdB04t89/1O/w1cDnyilFU=}"}
-    data = {"message": msg}
+def send_discord(msg):
+    if not DISCORD_WEBHOOK:
+        print("Webhook URL not set")
+        return
+    data = {"content": msg}
     try:
-        r = requests.post("https://notify-api.line.me/api/notify", headers=headers, data=data)
-        r.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print("LINE通知失敗:", e)
+        requests.post(DISCORD_WEBHOOK, json=data)
+    except Exception as e:
+        print("Discord通知失敗:", e)
 
-# -----------------------------
-# Yahoo検索から投稿数取得
-# -----------------------------
-def get_post_count():
-    total = 0
-    for kw in KEYWORDS:
-        for loc in LOCATIONS:
-            query = f"{kw} {loc}"
-            url = f"https://search.yahoo.co.jp/search?p={query}"
-            try:
-                resp = requests.get(url, timeout=10)
-                resp.raise_for_status()
-                soup = BeautifulSoup(resp.text, "html.parser")
-                # Yahoo検索の件数部分を取得（簡易版）
-                cnt_tag = soup.select_one(".compPagination .numbers")
-                if cnt_tag:
-                    cnt = int(cnt_tag.text.replace(",", ""))
-                    total += cnt
-            except Exception as e:
-                print(f"{query} 取得失敗:", e)
-    return total
-
-# -----------------------------
-# 前回データの読み込み・保存
-# -----------------------------
-def load_prev():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    return {"count":0}
-
-def save_curr(count):
-    with open(DATA_FILE, "w") as f:
-        json.dump({"count": count}, f)
-
-# -----------------------------
-# メイン処理
-# -----------------------------
 def main():
-    prev = load_prev()
-    count = get_post_count()
-    print("投稿数:", count, "(前回:", prev['count'], ")")
-
-    if count - prev['count'] >= THRESHOLD:
-        msg = f"甲種輸送・特殊貨物の投稿数増加！\n現在: {count}件 (前回比 +{count - prev['count']})"
-        send_line(msg)
-
-    save_curr(count)
+    count = get_yahoo_posts()
+    if count >= 10:
+        send_discord(f"⚠️ 投稿数増加: {count}件")
 
 if __name__ == "__main__":
     main()
