@@ -7,20 +7,20 @@ DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK")
 # 貨物系キーワード
 KEYWORDS = ["甲種輸送", "特殊貨物"]
 
-# 対象エリア（県 + 既存の市も含める）
+# 対象エリア（県 + 主要市）
 AREAS = [
     "愛知", "岐阜", "滋賀", "静岡", "長野",
     "一宮", "名古屋", "刈谷", "安城", "岡崎", "豊川", "豊橋", "浜松"
 ]
 
-# 鉄道関連（路線・会社）
+# 路線・会社
 RAIL_WORDS = [
     "東海道本線", "中央線", "JR貨物", "JR東海"
 ]
 
-# 機関車・車両
+# 機関車（EF66追加）
 LOCO_WORDS = [
-    "DE10", "EF210", "EF64", "DD200", "EF65"
+    "DE10", "EF210", "EF64", "DD200", "EF65", "EF66"
 ]
 
 THRESHOLD = 10
@@ -57,23 +57,19 @@ def fetch_results():
 
         hit = 0
 
-        # 貨物系
         if any(k in text for k in KEYWORDS):
             hit += 1
 
-        # エリア
         if any(a in text for a in AREAS):
             hit += 1
 
-        # 路線・会社
         if any(r in text for r in RAIL_WORDS):
             hit += 1
 
-        # 車両
         if any(l in text for l in LOCO_WORDS):
             hit += 1
 
-        # 2条件以上一致で採用
+        # 2条件以上一致
         if hit >= 2:
             results.append({
                 "title": title,
