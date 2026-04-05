@@ -1,15 +1,12 @@
-name: koushu-alert
+name: koushu-rss
 
 on:
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
-  alert:
+  run:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,5 +20,4 @@ jobs:
 
       - run: python main.py
         env:
-          TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
