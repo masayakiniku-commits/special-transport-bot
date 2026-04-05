@@ -2,8 +2,11 @@ name: koushu-alert
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # 30分ごと
+    - cron: '*/30 * * * *'
   workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   alert:
@@ -16,8 +19,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - run: |
-          pip install -r requirements.txt
+      - run: pip install -r requirements.txt
 
       - run: python main.py
         env:
