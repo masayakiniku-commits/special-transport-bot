@@ -1,67 +1,60 @@
-import os
 import requests
-import datetime
+import xml.etree.ElementTree as ET
+import os
 
-BEARER_TOKEN = os.environ.get("TWITTER_BEARER_TOKEN")
 DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK")
 
-QUERY = "(甲種輸送 OR 特殊貨物) (愛知 OR 岐阜 OR 静岡 OR 滋賀 OR 長野 OR 名古屋 OR 浜松) (EF210 OR EF64 OR EF65 OR EF66 OR DD200 OR DE10)"
+# 監視キーワード
+KEYWORDS = ["甲種輸送", "特殊貨物", "EF210", "EF64", "EF65", "EF66", "DD200", "DE10"]
 
-def fetch_tweets():
-    url = "https://api.twitter.com/2/tweets/search/recent"
+# RSS一覧（増やせる）
+RSS_URLS = [
+    "https://news.google.com/rss/search?q=甲種輸送",
+    "https://news.google.com/rss/search?q=特殊貨物",
+]
 
-    headers = {
-        "Authorization": f"Bearer {BEARER_TOKEN}"
-    }
+def fetch_rss():
+    results = []
 
-    params = {
-        "query": QUERY,
-        "max_results": 20,
-        "tweet.fields": "created_at,text"
-    }
+    for url in RSS_URLS:
+        try:
+            res = requests.get(url, timeout=10)
+            root = ET.fromstring(res.content)
 
-    res = requests.get(url, headers=headers, params=params)
+            for item in root.findall(".//item"):
+                title = item.find("title").text
+                link = item.find("link").text
 
-    if res.status_code != 200:
-        print("APIエラー:", res.text)
-        return []
+                # キーワード判定
+                if any(k in title for k in KEYWORDS):
+                    results.append({
+                        "title": title,
+                        "link": link
+                    })
 
-    data = res.json()
+        except Exception as e:
+            print("RSS取得エラー:", e)
 
-    tweets = []
-
-    for t in data.get("data", []):
-        text = t["text"]
-
-        # ノイズ除去
-        if "プレゼント" in text:
-            continue
-        if len(text) < 20:
-            continue
-
-        tweets.append(text)
-
-    return tweets
+    return results
 
 
 def send_discord(msg):
     if not DISCORD_WEBHOOK:
         return
-
     requests.post(DISCORD_WEBHOOK, json={"content": msg})
 
 
 def main():
-    tweets = fetch_tweets()
-    count = len(tweets)
+    results = fetch_rss()
+    count = len(results)
 
     print("件数:", count)
 
-    if count >= 3:
-        msg = "⚠️ 甲種輸送・特殊貨物の投稿増加\n\n"
+    if count > 0:
+        msg = f"🚆 甲種輸送・貨物検知\n件数: {count}\n\n"
 
-        for t in tweets[:5]:
-            msg += f"・{t[:80]}\n\n"
+        for r in results[:5]:
+            msg += f"・{r['title']}\n{r['link']}\n\n"
 
         send_discord(msg)
 
