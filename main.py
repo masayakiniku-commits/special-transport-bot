@@ -5,7 +5,7 @@ import datetime
 BEARER_TOKEN = os.environ.get("TWITTER_BEARER_TOKEN")
 DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK")
 
-QUERY = "甲種輸送 OR 特殊貨物 (EF210 OR EF64 OR EF65 OR EF66 OR DD200 OR DE10)"
+QUERY = "(甲種輸送 OR 特殊貨物) (愛知 OR 岐阜 OR 静岡 OR 滋賀 OR 長野 OR 名古屋 OR 浜松) (EF210 OR EF64 OR EF65 OR EF66 OR DD200 OR DE10)"
 
 def fetch_tweets():
     url = "https://api.twitter.com/2/tweets/search/recent"
