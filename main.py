@@ -11,6 +11,10 @@ KEYWORDS = ["甲種輸送", "特殊貨物", "EF210", "EF64", "EF65", "EF66", "DD
 RSS_URLS = [
     "https://news.google.com/rss/search?q=甲種輸送",
     "https://news.google.com/rss/search?q=特殊貨物",
+    "https://news.google.com/rss/search?q=EF210",
+    "https://news.google.com/rss/search?q=EF64",
+    "https://news.google.com/rss/search?q=EF65",
+    "https://news.google.com/rss/search?q=EF66",  
 ]
 
 def fetch_rss():
